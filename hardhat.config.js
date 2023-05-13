@@ -7,11 +7,11 @@ module.exports = {
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: [process.env.SEPOLIA_PRIVATE_KEY  || ""]
+      accounts: [process.env.SEPOLIA_PRIVATE_KEY  || "0x0000000000000000000000000000000000000000000000000000000000000000"]
     },
     optimism: {
       url: process.env.OPTIMISM_RPC_URL || "",
-      accounts: [process.env.OPTIMISM_PRIVATE_KEY  || ""]
+      accounts: [process.env.OPTIMISM_PRIVATE_KEY  || "0x0000000000000000000000000000000000000000000000000000000000000000"]
     },
   },
   etherscan: {

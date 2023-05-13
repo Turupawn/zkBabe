@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "charactersAddress",
+        "name": "babeAddress",
         "type": "address"
       },
       {
@@ -41,10 +41,10 @@
   },
   {
     "inputs": [],
-    "name": "characters",
+    "name": "babe",
     "outputs": [
       {
-        "internalType": "contract Characters",
+        "internalType": "contract Babe",
         "name": "",
         "type": "address"
       }

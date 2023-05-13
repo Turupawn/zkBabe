@@ -6,22 +6,22 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract Characters is ERC721, ERC721Enumerable, Ownable {
+contract Babes is ERC721, ERC721Enumerable, Ownable {
     
     using Counters for Counters.Counter;
 
     // Public variables
     Counters.Counter private tokenIds;
-    mapping(uint characterId => uint characterType) public characterTypes;
+    mapping(uint babeId => uint babeType) public babeTypes;
     mapping(address account => bool isWhitelisted) public whitelist;
-    uint public characterTypeAmount = 4;
+    uint public babeTypeAmount = 4;
 
     // Internal variables
     uint randomNonce = 0;
 
-    string public baseTokenURI = "http://localhost:3005/metadata/characters/";
+    string public baseTokenURI = "http://localhost:3005/metadata/babe/";
 
-    constructor() ERC721("Character", "CHAR") {}
+    constructor() ERC721("Babe", "BABE") {}
 
     // Public functions
 
@@ -30,13 +30,13 @@ contract Characters is ERC721, ERC721Enumerable, Ownable {
         whitelist[msg.sender] = false;
         tokenIds.increment();
         _mint(to, tokenIds.current());
-        characterTypes[tokenIds.current()] = getRandomNumber(characterTypeAmount); 
+        babeTypes[tokenIds.current()] = getRandomNumber(babeTypeAmount); 
     }
 
     // View Functions
 
-    function getCharacterType(uint characterId) public view returns(uint) {
-        return characterTypes[characterId];
+    function getBabeType(uint babeId) public view returns(uint) {
+        return babeTypes[babeId];
     }
 
     // Owner Functions
@@ -45,8 +45,8 @@ contract Characters is ERC721, ERC721Enumerable, Ownable {
         baseTokenURI = baseURI;
     }
 
-    function setCharacterTypeAmount(uint amount) public onlyOwner {
-        characterTypeAmount = amount;
+    function setBabeTypeAmount(uint amount) public onlyOwner {
+        babeTypeAmount = amount;
     }
 
     function setWhitelist(address[] memory accounts) public onlyOwner {
@@ -62,9 +62,9 @@ contract Characters is ERC721, ERC721Enumerable, Ownable {
         return super.supportsInterface(interfaceId);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint tokenId) internal override(ERC721, ERC721Enumerable)
+    function _beforeTokenTransfer(address from, address to, uint tokenId, uint batchSize) internal override(ERC721, ERC721Enumerable)
     {
-        super._beforeTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
     function _baseURI() internal view virtual override returns (string memory) {

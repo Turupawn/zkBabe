@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "./Characters.sol";
-import "./CharacterEquipment.sol";
+import "./Babes.sol";
+import "./BabeOutfit.sol";
 
 contract Dungeons is Ownable {
     // Public variables
     uint wearablesAmount = 8;
-    Characters public characters;
+    Babes public babes;
     Wearables public wearables;
-    CharacterEquipment public characterEquipment;
-    mapping(uint characterId => Registration) public registration;
+    BabeOutfit public babeOutfit;
+    mapping(uint babeId => Registration) public registration;
     mapping(uint dungeonId => Dungeon) public dungeons;
 
     // Internal variables
@@ -30,10 +30,10 @@ contract Dungeons is Ownable {
         uint advanceTimestamp;
     }
 
-    constructor(address charactersAddress, address wearablesAddress, address characterEquipmentAddress) {
-        characters = Characters(charactersAddress);
+    constructor(address babesAddress, address wearablesAddress, address babeOutfitAddress) {
+        babes = Babes(babesAddress);
         wearables = Wearables(wearablesAddress);
-        characterEquipment = CharacterEquipment(characterEquipmentAddress);
+        babeOutfit = BabeOutfit(babeOutfitAddress);
 
         dungeons[1].duration = 5 minutes;
         dungeons[1].minimumLevel = 0;
@@ -59,13 +59,13 @@ contract Dungeons is Ownable {
 
     // Public functions
 
-    function enterDungeon(uint characterId, uint dungeonId) public {
-        require(characters.ownerOf(characterId) == msg.sender, "Must be Character holder");
-        require(registration[characterId].dungeonId == 0, "Character is already in a dungeon");
-        require(registration[characterId].dungeonId == 0, "Character has not the minimum level");
+    function enterDungeon(uint babeId, uint dungeonId) public {
+        require(babes.ownerOf(babeId) == msg.sender, "Must be Babe holder");
+        require(registration[babeId].dungeonId == 0, "Babe is already in a dungeon");
+        require(registration[babeId].dungeonId == 0, "Babe has not the minimum level");
         require(dungeons[dungeonId].duration != 0, "Invalid Dungeon Id");
-        require(characterEquipment.getCharacterLevel(characterId, 2) >= dungeons[dungeonId].minimumLevel, "Character has not enough level");
-        registration[characterId] =
+        require(babeOutfit.getCharacterLevel(babeId, 2) >= dungeons[dungeonId].minimumLevel, "Babe has not enough level");
+        registration[babeId] =
             Registration(
                 msg.sender,
                 dungeonId,
@@ -73,19 +73,19 @@ contract Dungeons is Ownable {
             );
     }
 
-    function loot(uint characterId) public {
-        require(registration[characterId].dungeonId != 0, "Character is not in a dungeon");
-        require(block.timestamp >= registration[characterId].advanceTimestamp, "Character is still fighting");
+    function loot(uint babeId) public {
+        require(registration[babeId].dungeonId != 0, "Babe is not in a dungeon");
+        require(block.timestamp >= registration[babeId].advanceTimestamp, "Character is still fighting");
 
         uint randomness = getRandomNumber(10000);
         uint probabilitySum;
         for(uint i=1; i<=wearablesAmount; i++)
         {
-            uint probability = dungeons[registration[characterId].dungeonId].lootProbability[i];
+            uint probability = dungeons[registration[babeId].dungeonId].lootProbability[i];
             if(randomness < probability + probabilitySum)
             {
                 wearables.mint(msg.sender, i);
-                registration[characterId].dungeonId = 0;
+                registration[babeId].dungeonId = 0;
                 return;
             }
             probabilitySum += probability;

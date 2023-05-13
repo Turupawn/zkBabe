@@ -12,18 +12,18 @@ const hre = require("hardhat");
 
 async function main() {
   const [owner, account1, account2] = await ethers.getSigners();
-  const Characters = await hre.ethers.getContractFactory("Characters");
+  const Babe = await hre.ethers.getContractFactory("Babe");
   const Wearables = await hre.ethers.getContractFactory("Wearables");
   const CharacterEquipment = await hre.ethers.getContractFactory("CharacterEquipment");
   const Dungeons = await hre.ethers.getContractFactory("Dungeons");
 
   // Smart Contract Deploy
-  const characters = await Characters.deploy();
+  const babe = await Babe.deploy();
   const wearables = await Wearables.deploy();
-  const characterEquipment = await CharacterEquipment.deploy(characters.address, wearables.address);
-  const dungeons = await Dungeons.deploy(characters.address, wearables.address, characterEquipment.address);
+  const characterEquipment = await CharacterEquipment.deploy(babe.address, wearables.address);
+  const dungeons = await Dungeons.deploy(babe.address, wearables.address, characterEquipment.address);
 
-  console.log("Characters:          ", characters.address);
+  console.log("Babe:                ", babe.address);
   console.log("Wearables:           ", wearables.address);
   console.log("Character equipment: ", characterEquipment.address);
   console.log("Dungeons:            ", dungeons.address);
