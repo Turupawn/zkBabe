@@ -3,54 +3,54 @@ pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Babes.sol";
-import "./Wearables.sol";
+import "./BabeApparel.sol";
 
 contract BabeOutfit {
     Babes public babes;
-    Wearables public wearables;
+    BabeApparel public babeApparel;
 
-    mapping(uint babeId => mapping(uint wearableCategory => uint wearableId)) public babeOutfit;
+    mapping(uint babeId => mapping(uint babeApparelCategory => uint babeApparelId)) public babeOutfit;
 
-    constructor(address babesAddress, address wearablesAddress) {
+    constructor(address babesAddress, address babeApparelAddress) {
         babes = Babes(babesAddress);
-        wearables = Wearables(wearablesAddress);
+        babeApparel = BabeApparel(babeApparelAddress);
     }
 
     // Public functions
 
-    function equip(uint babeId, uint wearableId) public {
+    function equip(uint babeId, uint babeApparelId) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the Babe owner.");
-        require(wearables.ownerOf(wearableId) == msg.sender, "Sender must be the wearable owner.");
+        require(babeApparel.ownerOf(babeApparelId) == msg.sender, "Sender must be the apparel owner.");
 
-        uint wearableCategory = wearables.getCategory(wearables.getType(wearableId));
+        uint babeApparelCategory = babeApparel.getCategory(babeApparel.getType(babeApparelId));
 
-        if(babeOutfit[babeId][wearableCategory] != 0)
+        if(babeOutfit[babeId][babeApparelCategory] != 0)
         {
-            unequip(babeId, wearableCategory);
+            unequip(babeId, babeApparelCategory);
         }
     
-        babeOutfit[babeId][wearableCategory] = wearableId;
-        wearables.transferFrom(msg.sender, address(this), wearableId);
+        babeOutfit[babeId][babeApparelCategory] = babeApparelId;
+        babeApparel.transferFrom(msg.sender, address(this), babeApparelId);
     }
 
-    function unequip(uint babeId, uint wearableCategory) public {
+    function unequip(uint babeId, uint babeApparelCategory) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the babe owner.");
-        uint wearableId = babeOutfit[babeId][wearableCategory];
-        babeOutfit[babeId][wearableCategory] = 0;
-        wearables.transferFrom(address(this), msg.sender, wearableId);
+        uint babeApparelId = babeOutfit[babeId][babeApparelCategory];
+        babeOutfit[babeId][babeApparelCategory] = 0;
+        babeApparel.transferFrom(address(this), msg.sender, babeApparelId);
     }
 
     // View functions
 
-    function getBabeOutfit(uint babeId, uint wearableCategory) public view returns(uint) {
-        return babeOutfit[babeId][wearableCategory];
+    function getBabeOutfit(uint babeId, uint babeApparelCategory) public view returns(uint) {
+        return babeOutfit[babeId][babeApparelCategory];
     }
 
-    function getCharacterLevel(uint babeId, uint wearableCategoryAmount) public view returns(uint) {
+    function getCharacterLevel(uint babeId, uint babeApparelCategoryAmount) public view returns(uint) {
         uint totalLevel;
-        for(uint i=1; i<=wearableCategoryAmount; i++)
+        for(uint i=1; i<=babeApparelCategoryAmount; i++)
         {
-            totalLevel += wearables.getLevel(getBabeOutfit(babeId, i));
+            totalLevel += babeApparel.getLevel(getBabeOutfit(babeId, i));
         }
         return totalLevel;
     }

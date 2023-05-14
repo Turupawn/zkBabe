@@ -13,21 +13,22 @@ contract Babes is ERC721, ERC721Enumerable, Ownable {
     // Public variables
     Counters.Counter private tokenIds;
     mapping(uint babeId => uint babeType) public babeTypes;
-    mapping(address account => bool isWhitelisted) public whitelist;
     uint public babeTypeAmount = 4;
+    uint mintPrice;
 
     // Internal variables
     uint randomNonce = 0;
 
     string public baseTokenURI = "http://localhost:3005/metadata/babe/";
 
-    constructor() ERC721("Babe", "BABE") {}
+    constructor(uint _mintPrice) ERC721("Babe", "BABE") {
+        mintPrice = _mintPrice;
+    }
 
     // Public functions
 
-    function mint(address to) public {
-        require(whitelist[msg.sender], "Must be whitelisted");
-        whitelist[msg.sender] = false;
+    function mint(address to) public payable {
+        require(msg.value == mintPrice, "Invalid eth sent");
         tokenIds.increment();
         _mint(to, tokenIds.current());
         babeTypes[tokenIds.current()] = getRandomNumber(babeTypeAmount); 
@@ -49,10 +50,8 @@ contract Babes is ERC721, ERC721Enumerable, Ownable {
         babeTypeAmount = amount;
     }
 
-    function setWhitelist(address[] memory accounts) public onlyOwner {
-        for(uint256 i; i < accounts.length; i++){
-            whitelist[accounts[i]] = true;
-        }
+    function setPrice(uint _mintPrice) public onlyOwner {
+        mintPrice = _mintPrice;
     }
 
     // Overrided functions

@@ -12,87 +12,75 @@ const hre = require("hardhat");
 
 async function main() {
   const [owner, account1, account2] = await ethers.getSigners();
-  const Babe = await hre.ethers.getContractFactory("Babe");
-  const Wearables = await hre.ethers.getContractFactory("Wearables");
-  const CharacterEquipment = await hre.ethers.getContractFactory("CharacterEquipment");
-  const Dungeons = await hre.ethers.getContractFactory("Dungeons");
+  const Babes = await hre.ethers.getContractFactory("Babes");
+  const BabeApparel = await hre.ethers.getContractFactory("BabeApparel");
+  const BabeOutfit = await hre.ethers.getContractFactory("BabeOutfit");
+  const BabeRandomnessProtocol = await hre.ethers.getContractFactory("BabeRandomnessProtocol");
 
   // Smart Contract Deploy
-  const babe = await Babe.deploy();
-  const wearables = await Wearables.deploy();
-  const characterEquipment = await CharacterEquipment.deploy(babe.address, wearables.address);
-  const dungeons = await Dungeons.deploy(babe.address, wearables.address, characterEquipment.address);
+  const babes = await Babes.deploy(ethers.utils.parseEther("0.005"));
+  const babeApparel = await BabeApparel.deploy();
+  const babeOutfit = await BabeOutfit.deploy(babes.address, babeApparel.address);
+  const babeRandomnessProtocol = await BabeRandomnessProtocol.deploy(babeApparel.address);
 
-  console.log("Babe:                ", babe.address);
-  console.log("Wearables:           ", wearables.address);
-  console.log("Character equipment: ", characterEquipment.address);
-  console.log("Dungeons:            ", dungeons.address);
+  console.log("Babes:                    ", babes.address);
+  console.log("BabeApparel:              ", babeApparel.address);
+  console.log("BabeOutfit:               ", babeOutfit.address);
+  console.log("Babe Randomness Protocol: ", babeRandomnessProtocol.address);
 
   // Initial setup
 
-  await wearables.setMinter(dungeons.address, true)
-
-  return;
-
-  console.log("==All Dungeons==")
-  for(i=1; i<=4; i++)
-  {
-    dungeon = await dungeons.dungeons(i)
-    console.log("Dungeon " + i)
-    console.log(
-      " duration: " + dungeon[0] +
-      " minimum level: " + dungeon[1])
-    probabilities = ""
-    for(j=1; j<=8; j++)
-    {
-      probability = await dungeons.getDungeonLootProbability(i, j)
-      if(probability != 0)
-      {
-        probabilities += " wearable " + j + " " + probability/100 + "%,"
-      }
-    }
-    console.log(probabilities)
-  }
-  console.log("== end ==")
-
-  console.log("==All Wearables==")
-  for(i=1; i<=4; i++)
-  {
-
-  }
-  console.log("== end ==")
+  await babeApparel.setMinter(babeRandomnessProtocol.address, true)
 
   // Game
-  console.log("Let's mint two characters")
-  await characters.mint(owner.address)
-  await characters.mint(owner.address)
+  console.log("Let's mint two babes")
+  await babes.mint(owner.address, {value: ethers.utils.parseEther("0.005")})
+  await babes.mint(owner.address, {value: ethers.utils.parseEther("0.005")})
 
-  console.log("==My Characters==")
-  for(i=0; i<await characters.balanceOf(owner.address); i++)
+  console.log("==My Babes==")
+  for(i=0; i<await babes.balanceOf(owner.address); i++)
   {
-    characterId = await characters.tokenOfOwnerByIndex(owner.address, i)
-    characterType = await characters.characterTypes(characterId)
-    console.log("Id: " + characterId + ", " + " type: " + characterType)
+    babeId = await babes.tokenOfOwnerByIndex(owner.address, i)
+    babeType = await babes.getBabeType(babeId)
+    console.log("Id: " + babeId + ", " + " type: " + babeType)
   }
   console.log("== end ==")
 
-  console.log("Now we enter the first dungeon with character 1 to dungeon 1 and wait")
-  await dungeons.enterDungeon(1, 1);
-  await time.increaseTo(1777820202);
-  console.log("Now we loot")
-  await dungeons.loot(1);
-  console.log("We equip the looted equipment")
-  await wearables.approve(characterEquipment.address, 1) 
-  console.log("We equip to the character 1 the item 1")
-  await characterEquipment.equip(1, 1)
-  console.log("We now enter the dungeon 2")
-  await dungeons.enterDungeon(1, 2);
-  await time.increaseTo(1877820202);
-  await dungeons.loot(1);
-  await wearables.approve(characterEquipment.address, 2) 
-  await characterEquipment.equip(1,2)
-  //console.log("We now enter the dungeon 3")
-  //await dungeons.enterDungeon(1, 3);
+  console.log("Let's generate some randomness")
+
+  const currentTimestamp = Math.round(Date.now() / 1000)
+  const commitmentDeadline = currentTimestamp + 24 * 60 * 60 // in one day
+  const revealDeadline = currentTimestamp + 2* (24 * 60 * 60) // in two days
+
+  await babeRandomnessProtocol.generateRandomness(
+    commitmentDeadline,
+    revealDeadline,
+    ethers.utils.parseEther("0.1")
+  );
+
+  secret1 = ethers.utils.formatBytes32String("secret example hello yeah")
+  hash1 = ethers.utils.keccak256(secret1)
+  secret2 = ethers.utils.formatBytes32String("woo!")
+  hash2 = ethers.utils.keccak256(secret2)
+
+  console.log("Committing two hashes")
+
+  await babeRandomnessProtocol.commit(0, hash1, {value: ethers.utils.parseEther("0.1")})
+  await babeRandomnessProtocol.commit(0, hash2, {value: ethers.utils.parseEther("0.1")})
+
+  await time.increaseTo(commitmentDeadline + 1);
+  
+  console.log("Revealing the two secrets")
+  
+  await babeRandomnessProtocol.reveal(0, 0, secret1)
+  await babeRandomnessProtocol.reveal(0, 1, secret2)
+  
+  await time.increaseTo(revealDeadline + 1);
+
+  console.log("Randomness: " + await babeRandomnessProtocol.getRandomness(0))
+
+  console.log("Now claiming the random reward:")
+  await babeRandomnessProtocol.claimReward(0)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
