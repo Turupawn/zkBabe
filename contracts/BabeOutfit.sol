@@ -1,57 +1,77 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Babes.sol";
 import "./BabeApparel.sol";
 
-contract BabeOutfit {
+contract BabeOutfit is Ownable {
     Babes public babes;
-    BabeApparel public babeApparel;
+    mapping(address contractAddress => bool isBabeApparel) babeApparels;
 
-    mapping(uint babeId => mapping(uint babeApparelCategory => uint babeApparelId)) public babeOutfit;
+    struct ApparelOnOutfit {
+        address babeApparelContractAddress;
+        uint babeApparelId;
+    }
 
-    constructor(address babesAddress, address babeApparelAddress) {
+    mapping(uint babeId => mapping(uint babeApparelCategory => ApparelOnOutfit)) public babeOutfit;
+    mapping(uint babeId => mapping(uint babeApparelCategory => address babeApparelContractAddress)) public babeApparelContractAddress; 
+
+    constructor(address babesAddress) {
         babes = Babes(babesAddress);
-        babeApparel = BabeApparel(babeApparelAddress);
+    }
+
+    // Owner functions
+    function setBabeApparel(address contractAddress, bool isBabeApparel) public onlyOwner {
+        babeApparels[contractAddress] = isBabeApparel;
     }
 
     // Public functions
 
-    function equip(uint babeId, uint babeApparelId) public {
+    function putOnApparel(uint babeId, address babeApparelAddress, uint babeApparelId) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the Babe owner.");
+        require(babeApparels[babeApparelAddress], "Invalid BabeApparel contract");
+        BabeApparel babeApparel = BabeApparel(babeApparelAddress);
         require(babeApparel.ownerOf(babeApparelId) == msg.sender, "Sender must be the apparel owner.");
 
         uint babeApparelCategory = babeApparel.getCategory(babeApparel.getType(babeApparelId));
 
-        if(babeOutfit[babeId][babeApparelCategory] != 0)
+        if(babeOutfit[babeId][babeApparelCategory].babeApparelId != 0)
         {
-            unequip(babeId, babeApparelCategory);
+            takeOffApparel(babeId, babeApparelCategory);
         }
     
-        babeOutfit[babeId][babeApparelCategory] = babeApparelId;
+        babeOutfit[babeId][babeApparelCategory].babeApparelId = babeApparelId;
         babeApparel.transferFrom(msg.sender, address(this), babeApparelId);
     }
 
-    function unequip(uint babeId, uint babeApparelCategory) public {
+    function takeOffApparel(uint babeId, uint babeApparelCategory) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the babe owner.");
-        uint babeApparelId = babeOutfit[babeId][babeApparelCategory];
-        babeOutfit[babeId][babeApparelCategory] = 0;
+        BabeApparel babeApparel = BabeApparel(getBabeApparelContractAddress(babeId, babeApparelCategory));
+
+        uint babeApparelId = babeOutfit[babeId][babeApparelCategory].babeApparelId;
+        babeOutfit[babeId][babeApparelCategory].babeApparelId = 0;
         babeApparel.transferFrom(address(this), msg.sender, babeApparelId);
     }
 
     // View functions
 
-    function getBabeOutfit(uint babeId, uint babeApparelCategory) public view returns(uint) {
-        return babeOutfit[babeId][babeApparelCategory];
+    function getBabeApparelId(uint babeId, uint babeApparelCategory) public view returns(uint) {
+        return babeOutfit[babeId][babeApparelCategory].babeApparelId;
     }
 
-    function getCharacterLevel(uint babeId, uint babeApparelCategoryAmount) public view returns(uint) {
-        uint totalLevel;
+    function getBabeApparelContractAddress(uint babeId, uint babeApparelCategory) public view returns(address) {
+        return babeOutfit[babeId][babeApparelCategory].babeApparelContractAddress;
+    }
+
+    function getCharacterRarity(uint babeId, uint babeApparelCategoryAmount) public view returns(uint) {
+        uint totalRarity;
         for(uint i=1; i<=babeApparelCategoryAmount; i++)
         {
-            totalLevel += babeApparel.getLevel(getBabeOutfit(babeId, i));
+            BabeApparel babeApparel = BabeApparel(getBabeApparelContractAddress(babeId, i));
+            totalRarity += babeApparel.getRarity(getBabeApparelId(babeId, i));
         }
-        return totalLevel;
+        return totalRarity;
     }
 }

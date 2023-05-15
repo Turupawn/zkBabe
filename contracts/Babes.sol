@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./BabeApparel.sol";
 
 contract Babes is ERC721, ERC721Enumerable, Ownable {
     
@@ -13,25 +14,30 @@ contract Babes is ERC721, ERC721Enumerable, Ownable {
     // Public variables
     Counters.Counter private tokenIds;
     mapping(uint babeId => uint babeType) public babeTypes;
-    uint public babeTypeAmount = 4;
-    uint mintPrice;
+    uint public babeTypeAmount;
+    uint public mintPrice;
+    address public initialApparelContract;
 
     // Internal variables
     uint randomNonce = 0;
 
     string public baseTokenURI = "http://localhost:3005/metadata/babe/";
 
-    constructor(uint _mintPrice) ERC721("Babe", "BABE") {
+    constructor(uint _mintPrice, uint _babeTypeAmount, address _initialApparelContract) ERC721("Babe", "BABE") {
         mintPrice = _mintPrice;
+        babeTypeAmount = _babeTypeAmount;
+        initialApparelContract = _initialApparelContract;
     }
 
     // Public functions
 
-    function mint(address to) public payable {
+    function mint(address to, uint babeType) public payable {
         require(msg.value == mintPrice, "Invalid eth sent");
+        require(babeType < babeTypeAmount, "Invalid babe type");
         tokenIds.increment();
         _mint(to, tokenIds.current());
-        babeTypes[tokenIds.current()] = getRandomNumber(babeTypeAmount); 
+        BabeApparel(initialApparelContract).mintInitialApparel(to);
+        babeTypes[tokenIds.current()] = babeType;
     }
 
     // View Functions
@@ -68,13 +74,5 @@ contract Babes is ERC721, ERC721Enumerable, Ownable {
 
     function _baseURI() internal view virtual override returns (string memory) {
         return baseTokenURI;
-    }
-
-    // Internal functions
-
-    function getRandomNumber(uint modulus) internal returns(uint)
-    {
-        randomNonce++;
-        return uint(keccak256(abi.encodePacked(block.timestamp,msg.sender,randomNonce))) % modulus;
     }
 }

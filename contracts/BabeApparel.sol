@@ -14,29 +14,34 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
     Counters.Counter private tokenIds;
     mapping(uint apparelId => uint apparelType) public apparelTypes;
     mapping(uint apparelType => uint apparelCategory) public apparelCategories;
-    mapping(uint apparelType => uint level) public apparelTypeLevel;
+    mapping(uint apparelType => uint rarity) public apparelTypeRarity;
     mapping(address account => bool isMinter) public isMinter;
 
     string public baseTokenURI = "http://localhost:3005/metadata/apparel/";
 
     constructor() ERC721("My NFT", "MNFT") {
-        apparelTypeLevel[1] = 2;
-        apparelTypeLevel[2] = 8;
-        apparelTypeLevel[3] = 5;
-        apparelTypeLevel[4] = 10;
-        apparelTypeLevel[5] = 10;
-        apparelTypeLevel[6] = 15;
-        apparelTypeLevel[7] = 25;
-        apparelTypeLevel[8] = 50;
+        apparelTypeRarity[1] = 1;
+        apparelTypeRarity[2] = 1;
+        apparelTypeRarity[3] = 1;
+        apparelTypeRarity[4] = 1;
+        apparelTypeRarity[5] = 1;
+        apparelTypeRarity[6] = 1;
 
         apparelCategories[1] = 1;
-        apparelCategories[2] = 2;
-        apparelCategories[3] = 1;
+        apparelCategories[2] = 1;
+        apparelCategories[3] = 2;
         apparelCategories[4] = 2;
-        apparelCategories[5] = 1;
-        apparelCategories[6] = 2;
-        apparelCategories[7] = 2;
-        apparelCategories[8] = 2;
+        apparelCategories[5] = 3;
+        apparelCategories[6] = 3;
+    }
+
+    // Babe Contract functions
+
+    function mintInitialApparel(address to) public {
+        for(uint i=1; i<=6; i++)
+        {
+            mint(to, i);
+        }
     }
 
     // Public functions
@@ -54,12 +59,12 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
         baseTokenURI = baseURI;
     }
 
-    function setApparelTypeLevel(uint apparelType, uint level) public onlyOwner {
-        apparelTypeLevel[apparelType] = level;
+    function setApparelTypeRarity(uint apparelType, uint rarity) public onlyOwner {
+        apparelTypeRarity[apparelType] = rarity;
     }
 
-    function setApparelCategory(uint apparelCategory, uint level) public onlyOwner {
-        apparelCategories[apparelCategory] = level;
+    function setApparelCategory(uint apparelCategory, uint rarity) public onlyOwner {
+        apparelCategories[apparelCategory] = rarity;
     }
 
     function setMinter(address address_, bool value) public onlyOwner {
@@ -82,8 +87,8 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
 
     // View functions
 
-    function getLevel(uint apparelId) public view returns(uint) {
-        return apparelTypeLevel[apparelTypes[apparelId]];
+    function getRarity(uint apparelId) public view returns(uint) {
+        return apparelTypeRarity[apparelTypes[apparelId]];
     }
 
     function getType(uint apparelId) public view returns(uint) {
@@ -91,6 +96,6 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
     }
 
     function getCategory(uint apparelId) public view returns(uint) {
-        return apparelCategories[apparelId];
+        return apparelCategories[apparelTypes[apparelId]];
     }
 }

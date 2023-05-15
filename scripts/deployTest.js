@@ -18,9 +18,9 @@ async function main() {
   const BabeRandomnessProtocol = await hre.ethers.getContractFactory("BabeRandomnessProtocol");
 
   // Smart Contract Deploy
-  const babes = await Babes.deploy(ethers.utils.parseEther("0.005"));
   const babeApparel = await BabeApparel.deploy();
-  const babeOutfit = await BabeOutfit.deploy(babes.address, babeApparel.address);
+  const babes = await Babes.deploy(ethers.utils.parseEther("0.005"), 1, babeApparel.address);
+  const babeOutfit = await BabeOutfit.deploy(babes.address);
   const babeRandomnessProtocol = await BabeRandomnessProtocol.deploy(babeApparel.address);
 
   console.log("Babes:                    ", babes.address);
@@ -30,12 +30,17 @@ async function main() {
 
   // Initial setup
 
+  await babeApparel.setMinter(babes.address, true)
   await babeApparel.setMinter(babeRandomnessProtocol.address, true)
+  await babeOutfit.setBabeApparel(babeApparel.address, true)
 
-  // Game
+  // Minting babes
+
   console.log("Let's mint two babes")
-  await babes.mint(owner.address, {value: ethers.utils.parseEther("0.005")})
-  await babes.mint(owner.address, {value: ethers.utils.parseEther("0.005")})
+  await babes.mint(owner.address, 0, {value: ethers.utils.parseEther("0.005")})
+  await babes.mint(owner.address, 0, {value: ethers.utils.parseEther("0.005")})
+
+  // 
 
   console.log("==My Babes==")
   for(i=0; i<await babes.balanceOf(owner.address); i++)
@@ -43,6 +48,16 @@ async function main() {
     babeId = await babes.tokenOfOwnerByIndex(owner.address, i)
     babeType = await babes.getBabeType(babeId)
     console.log("Id: " + babeId + ", " + " type: " + babeType)
+  }
+  console.log("== end ==")
+
+  console.log("==My Apparel==")
+  for(i=0; i<await babeApparel.balanceOf(owner.address); i++)
+  {
+    apparelId = await babeApparel.tokenOfOwnerByIndex(owner.address, i)
+    apparelType = await babeApparel.getType(apparelId)
+    apparelCategory = await babeApparel.getCategory(apparelId)
+    console.log("Id: " + apparelId + ", " + " type: " + apparelType + ", " + " category: " + apparelCategory)
   }
   console.log("== end ==")
 

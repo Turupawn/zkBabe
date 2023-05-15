@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity  0.8.19;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./BabeApparel.sol";
 
-contract BabeRandomnessProtocol
-{
+contract BabeRandomnessProtocol is Ownable {
+
     using Counters for Counters.Counter;
     enum CommitmentState {NotCommitted, Committed, Revealed, Slashed}
     BabeApparel public babeApparel;
@@ -31,22 +32,14 @@ contract BabeRandomnessProtocol
     mapping(uint randomnessId => Randomness) public randomness;
     mapping(uint randomnessId => uint commitmentAmount) commitmentAmounts;
     mapping(uint randomnessId => mapping(uint commitmentId => Commitment commitment)) commitments;
+    mapping(address generator => bool isAllowed) generators;
 
     constructor(address babeApparelAddress) {
         babeApparel = BabeApparel(babeApparelAddress);
+        setGenerator(msg.sender, true);
     }
 
-    function generateRandomness(uint commitmentDeadline, uint revealDeadline, uint stakeAmount) public {
-        randomness[randomnessIds.current()] = Randomness(
-            bytes32(0),
-            commitmentDeadline,
-            revealDeadline,
-            false,
-            stakeAmount,
-            msg.sender
-        );
-        randomnessIds.increment();
-    }
+    // Public Functions
 
     function commit(uint randomnessId, bytes32 hashedValue) public payable {
         require(msg.value == randomness[randomnessId].stakeAmount, "Invalid stake amount");
@@ -84,7 +77,38 @@ contract BabeRandomnessProtocol
         babeApparel.mint(winner, 1);
     }
 
-    function claimSlashedETH(uint randomnessId, uint commitmentId) public {
+    function getRandomness(uint randomnessId) public view returns(bytes32) {
+        require(block.timestamp > randomness[randomnessId].revealDeadline,
+            "Randomness not ready yet.");
+        return randomness[randomnessId].randomBytes;
+    }
+
+    // Owner functions
+
+    function setGenerator(address generator, bool value) public onlyOwner {
+        generators[generator] = value;
+    }
+
+    // Generator functions
+
+    modifier onlyGenerator() {
+        require(generators[msg.sender], "Sender is not generator");
+        _;
+    }
+
+    function generateRandomness(uint commitmentDeadline, uint revealDeadline, uint stakeAmount) public onlyGenerator {
+        randomness[randomnessIds.current()] = Randomness(
+            bytes32(0),
+            commitmentDeadline,
+            revealDeadline,
+            false,
+            stakeAmount,
+            msg.sender
+        );
+        randomnessIds.increment();
+    }
+
+    function claimSlashedETH(uint randomnessId, uint commitmentId) public onlyGenerator {
         require(randomness[randomnessId].creator == msg.sender, "Only creator can claim slashed");
         require(block.timestamp > randomness[randomnessId].revealDeadline, "Slashing period has not happened yet");
         require(commitments[randomnessId][commitmentId].state == CommitmentState.Committed, "This commitment was not slashed");
@@ -93,11 +117,5 @@ contract BabeRandomnessProtocol
             payable(msg.sender),
             randomness[randomnessId].stakeAmount
         );
-    }
-
-    function getRandomness(uint randomnessId) public view returns(bytes32) {
-        require(block.timestamp > randomness[randomnessId].revealDeadline,
-            "Randomness not ready yet.");
-        return randomness[randomnessId].randomBytes;
     }
 }
