@@ -51,15 +51,7 @@ async function main() {
   }
   console.log("== end ==")
 
-  console.log("==My Apparel==")
-  for(i=0; i<await babeApparel.balanceOf(owner.address); i++)
-  {
-    apparelId = await babeApparel.tokenOfOwnerByIndex(owner.address, i)
-    apparelType = await babeApparel.getType(apparelId)
-    apparelCategory = await babeApparel.getCategory(apparelId)
-    console.log("Id: " + apparelId + ", " + " type: " + apparelType + ", " + " category: " + apparelCategory)
-  }
-  console.log("== end ==")
+
 
   console.log("Let's generate some randomness")
 
@@ -96,6 +88,16 @@ async function main() {
 
   console.log("Now claiming the random reward:")
   await babeRandomnessProtocol.claimReward(0)
+
+  console.log("==My Apparel==")
+  for(i=0; i<await babeApparel.balanceOf(owner.address); i++)
+  {
+    apparelId = await babeApparel.tokenOfOwnerByIndex(owner.address, i)
+    apparelType = await babeApparel.getType(apparelId)
+    apparelCategory = await babeApparel.getCategory(apparelId)
+    console.log("Id: " + apparelId + ", " + " type: " + apparelType + ", " + " category: " + apparelCategory)
+  }
+  console.log("== end ==")
 }
 
 // We recommend this pattern to be able to use async/await everywhere

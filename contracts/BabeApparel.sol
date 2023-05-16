@@ -26,19 +26,25 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
         apparelTypeRarity[4] = 1;
         apparelTypeRarity[5] = 1;
         apparelTypeRarity[6] = 1;
+        apparelTypeRarity[7] = 1;
+        apparelTypeRarity[8] = 1;
+        apparelTypeRarity[9] = 1;
 
         apparelCategories[1] = 1;
         apparelCategories[2] = 1;
-        apparelCategories[3] = 2;
+        apparelCategories[3] = 1;
         apparelCategories[4] = 2;
-        apparelCategories[5] = 3;
-        apparelCategories[6] = 3;
+        apparelCategories[5] = 2;
+        apparelCategories[6] = 2;
+        apparelCategories[7] = 3;
+        apparelCategories[8] = 3;
+        apparelCategories[9] = 3;
     }
 
     // Babe Contract functions
 
     function mintInitialApparel(address to) public {
-        for(uint i=1; i<=6; i++)
+        for(uint i=1; i<=9; i++)
         {
             mint(to, i);
         }
