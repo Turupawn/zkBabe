@@ -16,17 +16,14 @@ contract Babes is ERC721, ERC721Enumerable, Ownable {
     mapping(uint babeId => uint babeType) public babeTypes;
     uint public babeTypeAmount;
     uint public mintPrice;
-    address public initialApparelContract;
-
-    // Internal variables
-    uint randomNonce = 0;
+    address payable public initialApparelContract;
 
     string public baseTokenURI = "http://localhost:3005/metadata/babe/";
 
     constructor(uint _mintPrice, uint _babeTypeAmount, address _initialApparelContract) ERC721("Babe", "BABE") {
         mintPrice = _mintPrice;
         babeTypeAmount = _babeTypeAmount;
-        initialApparelContract = _initialApparelContract;
+        initialApparelContract = payable(_initialApparelContract);
     }
 
     // Public functions

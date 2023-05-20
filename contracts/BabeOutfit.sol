@@ -32,7 +32,7 @@ contract BabeOutfit is Ownable {
     function putOnApparel(uint babeId, address babeApparelAddress, uint babeApparelId) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the Babe owner.");
         require(babeApparels[babeApparelAddress], "Invalid BabeApparel contract");
-        BabeApparel babeApparel = BabeApparel(babeApparelAddress);
+        BabeApparel babeApparel = BabeApparel(payable(babeApparelAddress));
         require(babeApparel.ownerOf(babeApparelId) == msg.sender, "Sender must be the apparel owner.");
 
         uint babeApparelCategory = babeApparel.getCategory(babeApparel.getType(babeApparelId));
@@ -48,7 +48,7 @@ contract BabeOutfit is Ownable {
 
     function takeOffApparel(uint babeId, uint babeApparelCategory) public {
         require(babes.ownerOf(babeId) == msg.sender, "Sender must be the babe owner.");
-        BabeApparel babeApparel = BabeApparel(getBabeApparelContractAddress(babeId, babeApparelCategory));
+        BabeApparel babeApparel = BabeApparel(payable(getBabeApparelContractAddress(babeId, babeApparelCategory)));
 
         uint babeApparelId = babeOutfit[babeId][babeApparelCategory].babeApparelId;
         babeOutfit[babeId][babeApparelCategory].babeApparelId = 0;
@@ -69,9 +69,15 @@ contract BabeOutfit is Ownable {
         uint totalRarity;
         for(uint i=1; i<=babeApparelCategoryAmount; i++)
         {
-            BabeApparel babeApparel = BabeApparel(getBabeApparelContractAddress(babeId, i));
+            BabeApparel babeApparel = BabeApparel(payable(getBabeApparelContractAddress(babeId, i)));
             totalRarity += babeApparel.getRarity(getBabeApparelId(babeId, i));
         }
         return totalRarity;
+    }
+
+    fallback() external payable {
+    }
+
+    receive() external payable {
     }
 }

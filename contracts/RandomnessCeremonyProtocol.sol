@@ -3,13 +3,11 @@ pragma solidity  0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./BabeApparel.sol";
 
-contract BabeRandomnessProtocol is Ownable {
+contract RandomnessCeremonyProtocol is Ownable {
 
     using Counters for Counters.Counter;
     enum CommitmentState {NotCommitted, Committed, Revealed, Slashed}
-    BabeApparel public babeApparel;
 
     struct Randomness
     {
@@ -24,18 +22,15 @@ contract BabeRandomnessProtocol is Ownable {
     struct Commitment
     {
         address committer;
-        bytes32 hashedValue;
         CommitmentState state;
     }
 
     Counters.Counter private randomnessIds;
     mapping(uint randomnessId => Randomness) public randomness;
-    mapping(uint randomnessId => uint commitmentAmount) commitmentAmounts;
-    mapping(uint randomnessId => mapping(uint commitmentId => Commitment commitment)) commitments;
+    mapping(uint randomnessId => mapping(bytes32 hashedValue => Commitment commitment)) commitments;
     mapping(address generator => bool isAllowed) generators;
 
-    constructor(address babeApparelAddress) {
-        babeApparel = BabeApparel(babeApparelAddress);
+    constructor() {
         setGenerator(msg.sender, true);
     }
 
@@ -44,8 +39,7 @@ contract BabeRandomnessProtocol is Ownable {
     function commit(uint randomnessId, bytes32 hashedValue) public payable {
         require(msg.value == randomness[randomnessId].stakeAmount, "Invalid stake amount");
         require(block.timestamp <= randomness[randomnessId].commitmentDeadline, "Can't commit at this moment.");
-        commitments[randomnessId][commitmentAmounts[randomnessId]] = Commitment(msg.sender, hashedValue, CommitmentState.Committed);
-        commitmentAmounts[randomnessId] += 1;
+        commitments[randomnessId][hashedValue] = Commitment(msg.sender, CommitmentState.Committed);
     }
 
     function sendViaCall(address payable _to, uint amount) public {
@@ -54,27 +48,20 @@ contract BabeRandomnessProtocol is Ownable {
         require(sent, "Failed to send Ether");
     }
 
-    function reveal(uint randomnessId, uint commitmentId, bytes32 secretValue) public {
+    function reveal(uint randomnessId, bytes32 hashedValue, bytes32 secretValue) public {
         require(block.timestamp > randomness[randomnessId].commitmentDeadline &&
             block.timestamp <= randomness[randomnessId].revealDeadline, "Can't reveal at this moment.");
-        require(commitments[randomnessId][commitmentId].state == CommitmentState.Committed, "Hash is not commited");
-        require(commitments[randomnessId][commitmentId].hashedValue == keccak256(abi.encodePacked(secretValue)), "Invalid secret value");
+        require(commitments[randomnessId][hashedValue].state == CommitmentState.Committed, "Hash is not commited");
+        require(hashedValue == keccak256(abi.encodePacked(secretValue)), "Invalid secret value");
 
-        commitments[randomnessId][commitmentId].state = CommitmentState.Revealed;
+        commitments[randomnessId][hashedValue].state = CommitmentState.Revealed;
 
         randomness[randomnessId].randomBytes = randomness[randomnessId].randomBytes ^ secretValue;
 
         sendViaCall(
-            payable(commitments[randomnessId][commitmentId].committer),
+            payable(commitments[randomnessId][hashedValue].committer),
             randomness[randomnessId].stakeAmount
         );
-    }
-
-    function claimReward(uint randomnessId) public {
-        require(!randomness[randomnessId].rewardIsClaimed, "Reward already claimed.");
-        randomness[randomnessId].rewardIsClaimed = true;
-        address winner = commitments[randomnessId][uint(getRandomness(randomnessId)) % commitmentAmounts[randomnessId]].committer;
-        babeApparel.mint(winner, 1);
     }
 
     function getRandomness(uint randomnessId) public view returns(bytes32) {
@@ -96,8 +83,9 @@ contract BabeRandomnessProtocol is Ownable {
         _;
     }
 
-    function generateRandomness(uint commitmentDeadline, uint revealDeadline, uint stakeAmount) public onlyGenerator {
-        randomness[randomnessIds.current()] = Randomness(
+    function generateRandomness(uint commitmentDeadline, uint revealDeadline, uint stakeAmount) public returns(uint){
+        uint randomnessId = randomnessIds.current();
+        randomness[randomnessId] = Randomness(
             bytes32(0),
             commitmentDeadline,
             revealDeadline,
@@ -106,16 +94,23 @@ contract BabeRandomnessProtocol is Ownable {
             msg.sender
         );
         randomnessIds.increment();
+        return randomnessId;
     }
 
-    function claimSlashedETH(uint randomnessId, uint commitmentId) public onlyGenerator {
+    function claimSlashedETH(uint randomnessId, bytes32 hashedValue) public onlyGenerator {
         require(randomness[randomnessId].creator == msg.sender, "Only creator can claim slashed");
         require(block.timestamp > randomness[randomnessId].revealDeadline, "Slashing period has not happened yet");
-        require(commitments[randomnessId][commitmentId].state == CommitmentState.Committed, "This commitment was not slashed");
-        commitments[randomnessId][commitmentId].state = CommitmentState.Slashed;
+        require(commitments[randomnessId][hashedValue].state == CommitmentState.Committed, "This commitment was not slashed");
+        commitments[randomnessId][hashedValue].state = CommitmentState.Slashed;
         sendViaCall(
             payable(msg.sender),
             randomness[randomnessId].stakeAmount
         );
+    }
+
+ fallback() external payable {
+    }
+
+    receive() external payable {
     }
 }

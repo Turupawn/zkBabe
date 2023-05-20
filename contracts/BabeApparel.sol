@@ -104,4 +104,10 @@ contract BabeApparel is ERC721, ERC721Enumerable, Ownable {
     function getCategory(uint apparelId) public view returns(uint) {
         return apparelCategories[apparelTypes[apparelId]];
     }
+
+    fallback() external payable {
+    }
+
+    receive() external payable {
+    }
 }
