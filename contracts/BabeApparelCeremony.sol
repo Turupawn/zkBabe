@@ -16,7 +16,6 @@ contract BabeApparelCeremony is Ownable {
         uint ticketCount;
     }
 
-    mapping(uint randomnessId => bool rewardIsClaimed) isClaimed;
     mapping(uint babeCeremonyId => BabeCeremony) babeCeremonies;
     uint babeCeremoniesCount;
     mapping(uint ceremonyId => mapping(uint ticketId => address ticketOwner)) tickets;
